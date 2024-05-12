@@ -3,6 +3,7 @@ const app = express();
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 app.use(cors());
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 app.use(express.json());
 const port = process.env.PORT || 5000;
@@ -26,7 +27,14 @@ async function run() {
     const usersCollection = client.db("bistroBossDB").collection("users");
     const reviewsCollection = client.db("bistroBossDB").collection("reviews");
     const cartCollection = client.db("bistroBossDB").collection("carts");
-
+    //!jwt
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
 
     app.patch("/users/admin/:id", async (req, res) => {
       const id = req.params.id;
@@ -39,12 +47,12 @@ async function run() {
       const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    app.delete('/users/:id',async (req,res)=>{
-      const id=req.params.id;
-      const query={_id: new ObjectId(id)}
-      const result= await usersCollection.deleteOne(query);
+    app.delete("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await usersCollection.deleteOne(query);
       res.send(result);
-    })
+    });
     app.post("/users", async (req, res) => {
       const users = req.body;
       const query = { email: users.email };
