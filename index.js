@@ -23,10 +23,10 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    const userCollection = client.db("bistroDb").collection("users");
-    const menuCollection = client.db("bistroDb").collection("menu");
-    const reviewCollection = client.db("bistroDb").collection("reviews");
-    const cartCollection = client.db("bistroDb").collection("carts");
+    const userCollection = client.db("bistroBossDB").collection("users");
+    const menuCollection = client.db("bistroBossDB").collection("menu");
+    const reviewCollection = client.db("bistroBossDB").collection("reviews");
+    const cartCollection = client.db("bistroBossDB").collection("carts");
 
     // jwt related api
     app.post("/jwt", async (req, res) => {
