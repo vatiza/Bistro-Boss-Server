@@ -26,7 +26,8 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    //!vercel problem path now remove await
+    client.connect();
 
     const userCollection = client.db("bistroBossDB").collection("users");
     const menuCollection = client.db("bistroBossDB").collection("menu");
@@ -250,7 +251,7 @@ async function run() {
         revenue,
       });
     });
-    //todo: next time fix this aggregate not working 
+    //todo: next time fix this aggregate not working
     app.get("/order-stats", async (req, res) => {
       const pipeline = [
         {
