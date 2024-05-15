@@ -201,25 +201,78 @@ async function run() {
       res.send({ insertResult, deleteResult });
     });
 
+    // app.get("/admin-stats", verifyToken, verifyAdmin, async (req, res) => {
+    //   const user = await userCollection.estimatedDocumentCount();
+    //   const products = await menuCollection.estimatedDocumentCount();
+    //   const orders = await paymentsCollection.estimatedDocumentCount();
+
+    //   //best way to get sum of the price field is to use group and sum operator
+    //   const paymments = await paymentsCollection.find().toArray();
+    //   const revenue = paymments.reduce(
+    //     (sum, payment) => sum + payment.price,
+    //     0
+    //   );
+    //   res.send({
+    //     revenue,
+    //     user,
+    //     products,
+    //     orders,
+    //   });
+    // });
     app.get("/admin-stats", verifyToken, verifyAdmin, async (req, res) => {
-      const user = await userCollection.estimatedDocumentCount();
-      const products = await menuCollection.estimatedDocumentCount();
+      const users = await userCollection.estimatedDocumentCount();
+      const menuItems = await menuCollection.estimatedDocumentCount();
       const orders = await paymentsCollection.estimatedDocumentCount();
 
-      //best way to get sum of the price field is to use group and sum operator
-      const paymments = await paymentsCollection.find().toArray();
-      const revenue = paymments.reduce(
-        (sum, payment) => sum + payment.price,
-        0
-      );
+      // this is not the best way
+      // const payments = await paymentCollection.find().toArray();
+      // const revenue = payments.reduce((total, payment) => total + payment.price, 0);
+
+      const result = await paymentsCollection
+        .aggregate([
+          {
+            $group: {
+              _id: null,
+              totalRevenue: {
+                $sum: "$price",
+              },
+            },
+          },
+        ])
+        .toArray();
+
+      const revenue = result.length > 0 ? result[0].totalRevenue : 0;
+
       res.send({
-        revenue,
-        user,
-        products,
+        users,
+        menuItems,
         orders,
+        revenue,
       });
     });
-
+    //todo: next time fix this aggregate not working 
+    app.get("/order-stats", async (req, res) => {
+      const pipeline = [
+        {
+          $lookup: {
+            from: "menu",
+            localField: "items",
+            foreignField: "_id",
+            as: "menuItems",
+          },
+        },
+        { $unwind: "$menuItems" },
+        {
+          $group: {
+            _id: "$menuItems.category",
+            count: { $sum: 1 },
+            totalPrice: { $sum: "$menuItems.price" },
+          },
+        },
+      ];
+      const result = await paymentsCollection.aggregate(pipeline).toArray();
+      res.send(result);
+    });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
