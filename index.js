@@ -30,7 +30,6 @@ async function run() {
     const menuCollection = client.db("bistroBossDB").collection("menu");
     const reviewCollection = client.db("bistroBossDB").collection("reviews");
     const cartCollection = client.db("bistroBossDB").collection("carts");
-    
 
     // jwt related api
     app.post("/jwt", async (req, res) => {
@@ -131,6 +130,17 @@ async function run() {
     // menu related apis
     app.get("/menu", async (req, res) => {
       const result = await menuCollection.find().toArray();
+      res.send(result);
+    });
+    app.post("/menu", verifyToken, verifyAdmin, async (req, res) => {
+      const newItem = req.body;
+      const result = await menuCollection.insertOne(newItem);
+      res.send(result);
+    });
+    app.delete("/menu/:id", verifyToken, verifyAdmin, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await menuCollection.deleteOne(query);
       res.send(result);
     });
 
