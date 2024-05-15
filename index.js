@@ -201,6 +201,25 @@ async function run() {
       res.send({ insertResult, deleteResult });
     });
 
+    app.get("/admin-stats", verifyToken, verifyAdmin, async (req, res) => {
+      const user = await userCollection.estimatedDocumentCount();
+      const products = await menuCollection.estimatedDocumentCount();
+      const orders = await paymentsCollection.estimatedDocumentCount();
+
+      //best way to get sum of the price field is to use group and sum operator
+      const paymments = await paymentsCollection.find().toArray();
+      const revenue = paymments.reduce(
+        (sum, payment) => sum + payment.price,
+        0
+      );
+      res.send({
+        revenue,
+        user,
+        products,
+        orders,
+      });
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
