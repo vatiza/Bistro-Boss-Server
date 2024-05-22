@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+var nodemailer = require("nodemailer");
+var mg = require("nodemailer-mailgun-transport");
 const jwt = require("jsonwebtoken");
 
 require("dotenv").config();
@@ -11,7 +13,51 @@ const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 app.use(cors());
 app.use(express.json());
 
+var auth = {
+  auth: {
+    apiKey: process.env.EMAIL_PRIVATE_KEY,
+    domain: process.env.EMAIL_DOMAIN,
+  },
+};
+const transporter = nodemailer.createTransport(mg(auth));
+
+// const transporter = nodemailer.createTransport(MailgunTransport(auth));
+// let transporter = nodemailer.createTransport({
+//   host: 'smtp.sendgrid.net',
+//   port: 587,
+//   auth: {
+//       user: "apikey",
+//       pass: process.env.SENDGRID_API_KEY
+//   }
+// })
+//!send email functions
+const sendPaymentsConfirmationEmail = (payment) => {
+  transporter.sendMail(
+    {
+      from: "zihad1723@gmail.com", // verified sender email
+      to: "zihad1723@gmail.com", // recipient email
+      subject: "Your Order is Confrimed,Enjoy!", // Subject line
+      text: "Hello world!", // plain text body
+      html: `
+    <div>
+    <h2>Paymnet Confirmed!</h2>
+    <p>The Transaction Id :${payment.transactionId}</p>
+    </div>
+    
+    `, // html body
+    },
+    function (error, info) {
+      if (error) {
+        console.log(error);
+      } else {
+        console.log("Email sent: " + info.response);
+      }
+    }
+  );
+};
+
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const mailgunTransport = require("nodemailer-mailgun-transport");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ub65wqu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -199,6 +245,9 @@ async function run() {
         _id: { $in: payment.cartItems.map((id) => new ObjectId(id)) },
       };
       const deleteResult = await cartCollection.deleteMany(query);
+      //!send email confirming payments
+      sendPaymentsConfirmationEmail(payment);
+
       res.send({ insertResult, deleteResult });
     });
 
